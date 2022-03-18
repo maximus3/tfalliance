@@ -11,7 +11,8 @@ from os import getenv
 
 TOKEN = getenv("BOT_TOKEN")  # берем токен из виртуального окружения
 bot = Bot(token=TOKEN)
-dp = Dispatcher(bot)
+storage = MemoryStorage()
+dp = Dispatcher(bot, storage=storage)
 logging.basicConfig(level=logging.INFO)
 
 
@@ -54,12 +55,24 @@ async def cancel_handler(message: types.Message, state: FSMContext):
     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
     check = await check_admin_permissions(message.from_user.id)
     if check:
-        buttons = ["Отправить", "Помощь"]
+        buttons = ["Ответить", "Помощь"]
         keyboard.add(*buttons)
         await message.answer('Главное меню модератора', reply_markup=keyboard)
     else:
         #  TODO В случае обычного пользователя прописать.....
         pass
+
+
+@dp.message_handler(state=Form.question_answer)
+async def process_question_answer(message: types.Message, state: FSMContext):
+    async with state.proxy() as data:
+        data['question_answer'] = message.text
+    print(message.text)
+    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    buttons = ["Ответить", "Помощь"]
+    keyboard.add(*buttons)
+    await message.answer("Sucess!", reply_markup=keyboard)
+    await state.finish()
 
 
 @dp.errors_handler(exception=BotBlocked)
@@ -81,7 +94,7 @@ async def cmd_start(message: types.Message):
     print(message.from_user)
     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
     if check:
-        buttons = ["Отправить", "Помощь"]
+        buttons = ["Ответить", "Помощь"]
         keyboard.add(*buttons)
         await message.answer('Главное меню модератора', reply_markup=keyboard)
     else:
