@@ -62,8 +62,6 @@ async def cancel_handler(message: types.Message, state: FSMContext):
         pass
 
 
-
-
 @dp.errors_handler(exception=BotBlocked)
 async def error_bot_blocked(update: types.Update, exception: BotBlocked):
     # Update: объект события от Telegram. Exception: объект исключения
@@ -91,6 +89,7 @@ async def cmd_start(message: types.Message):
         pass
 
 
+@dp.message_handler(Text(equals="Помощь"))
 @dp.message_handler(commands="help")
 async def helping(message: types.Message):
     check = await check_admin_permissions(message.from_user.id)
