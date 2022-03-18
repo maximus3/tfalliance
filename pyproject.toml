@@ -7,7 +7,9 @@ authors = []
 [tool.poetry.dependencies]
 python = "^3.9"
 peewee = "^3.14.10"
+telebot = "^0.0.4"
 pyTelegramBotAPI = "^4.4.0"
+aiogram = "^2.19"
 
 [tool.poetry.dev-dependencies]
 black = "^22.1.0"
