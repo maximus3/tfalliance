@@ -5,9 +5,9 @@ TEST = poetry run pytest --verbosity=2 --showlocals --log-level=DEBUG --strict-m
 install: ## Install dependencies
 	poetry install --no-interaction --no-ansi
 
-.PHONY: up
-up: ## Run Flask
-	poetry run flask run
+.PHONY: run
+run: ## Run Flask
+	poetry run python -m bot
 
 .PHONY: test
 test: ## Runs pytest with coverage

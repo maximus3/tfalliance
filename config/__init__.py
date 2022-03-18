@@ -7,3 +7,5 @@ with open(BASE_DIR / 'config.json', encoding='utf-8') as f:
 
 
 DATABASE_NAME = data['database_name']
+MAIN_BOT_API_ID = data['main_bot_api_id']
+MAIN_BOT_API_HASH = data['main_bot_api_hash']
