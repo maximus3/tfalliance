@@ -20,7 +20,7 @@ class BaseModel(Model):
 
 class AllThemes(BaseModel):
     theme_uid = IntegerField(primary_key=True)
-    theme_name = CharField()
+    theme_name = CharField(unique=True)
     tg_bot_token = CharField()
     bot_nick = CharField()
 
