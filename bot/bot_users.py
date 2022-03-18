@@ -1,12 +1,10 @@
 import logging
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.utils.exceptions import BotBlocked
-import asyncio
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher.filters.state import State, StatesGroup
-from aiogram.types import ParseMode
 from os import getenv
 
 TOKEN = getenv("BOT_TOKEN")  # берем токен из виртуального окружения
@@ -16,20 +14,24 @@ dp = Dispatcher(bot, storage=storage)
 logging.basicConfig(level=logging.INFO)
 
 
-class Form(StatesGroup):
+class Answer(StatesGroup):
     question_answer = State()  # Will be represented in storage as 'Form:name'
 
 
+#  TODO Добавить класс Request для обычных юзеров
+
+
+#  (Доступно только для админа) Выдает текст вопроса от пользователя и стартует STATE question answer
 @dp.message_handler(commands="incoming")
 @dp.message_handler(Text(equals='Ответить', ignore_case=True))
 async def incoming(message: types.Message):
     check = await check_admin_permissions(message.from_user.id)
     if check:
-        question = await get_question()
+        question = await get_question()  # Вызов функции для возврата текста вопроса пользователя
         if question == "":
-            pass
+            await message.answer("Сообщений по данной теме пока нет!")
         else:
-            await Form.question_answer.set()
+            await Answer.question_answer.set()  # start STATE
             keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
             buttons = ["Отмена"]
             keyboard.add(*buttons)
@@ -38,6 +40,7 @@ async def incoming(message: types.Message):
         await message.answer("Данная команда не доступна для данного пользователя!")
 
 
+#  ОТМЕНА действия и возврат в главное меню при любом STATE для любого пользователя
 @dp.message_handler(state='*', commands='cancel')
 @dp.message_handler(Text(equals='Отмена', ignore_case=True), state='*')
 async def cancel_handler(message: types.Message, state: FSMContext):
@@ -59,15 +62,16 @@ async def cancel_handler(message: types.Message, state: FSMContext):
         keyboard.add(*buttons)
         await message.answer('Главное меню модератора', reply_markup=keyboard)
     else:
-        #  TODO В случае обычного пользователя прописать.....
-        pass
+        buttons = ["Написать", "Помощь"]
+        keyboard.add(*buttons)
+        await message.answer('Главное меню пользователя', reply_markup=keyboard)
 
 
-@dp.message_handler(state=Form.question_answer)
+# STATE для Answer - вызывается при вводе текста после написанного вопроса
+@dp.message_handler(state=Answer.question_answer)
 async def process_question_answer(message: types.Message, state: FSMContext):
-    async with state.proxy() as data:
-        data['question_answer'] = message.text
-    print(message.text)
+    print(message.text)  # TODO добавить данный текст в БАЗУ ДАННЫХ
+
     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
     buttons = ["Ответить", "Помощь"]
     keyboard.add(*buttons)
@@ -75,6 +79,7 @@ async def process_question_answer(message: types.Message, state: FSMContext):
     await state.finish()
 
 
+#  Обработка исключения, когда пользователь заблокировал бота
 @dp.errors_handler(exception=BotBlocked)
 async def error_bot_blocked(update: types.Update, exception: BotBlocked):
     # Update: объект события от Telegram. Exception: объект исключения
@@ -83,6 +88,7 @@ async def error_bot_blocked(update: types.Update, exception: BotBlocked):
     return True
 
 
+# СТАРТ, ИНИЦИАЛИЗАЦИЯ ПОЛЬЗОВАТЕЛЯ И БОТА
 @dp.message_handler(commands="start")
 async def cmd_start(message: types.Message):
     check = await check_admin_permissions(message.from_user.id)
@@ -98,10 +104,12 @@ async def cmd_start(message: types.Message):
         keyboard.add(*buttons)
         await message.answer('Главное меню модератора', reply_markup=keyboard)
     else:
-        #  TODO В случае обычного пользователя прописать.....
-        pass
+        buttons = ["Написать", "Помощь"]
+        keyboard.add(*buttons)
+        await message.answer('Главное меню пользователя', reply_markup=keyboard)
 
 
+# Вывод меню помощи для каждого пользователя
 @dp.message_handler(Text(equals="Помощь"))
 @dp.message_handler(commands="help")
 async def helping(message: types.Message):
