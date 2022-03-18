@@ -1,4 +1,4 @@
-CODE = bot database tests
+CODE = bot database config tests
 TEST = poetry run pytest --verbosity=2 --showlocals --log-level=DEBUG --strict-markers $(arg) -k "$(k)"
 
 .PHONY: install
