@@ -1,5 +1,6 @@
 from enum import Enum
 
 
-class ErrorCode(Enum):
-    THEME_ALREADY_EXISTS = 0
+class StatusCode(Enum):
+    OK = 0
+    THEME_ALREADY_EXISTS = 1
