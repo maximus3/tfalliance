@@ -12,7 +12,7 @@ from .status_code import StatusCode
 logger = logging.getLogger(__name__)
 
 
-def start_new_bot(tg_bot_token: str) -> StatusCode:  # TODO
+def start_new_chat(tg_bot_token: str) -> StatusCode:  # TODO
     logger.info('Start new bot with token=%s', tg_bot_token)
     return StatusCode.OK
 
@@ -52,7 +52,7 @@ async def add_new_theme(
         return StatusCode.ERROR_IN_ADD_TO_DATABASE, ''
     logger.info('Bot by theme=%s db created', theme_name)
 
-    status_run_bot = start_new_bot(tg_bot_token)
+    status_run_bot = start_new_chat(tg_bot_token)
     if status_run_bot:
         logger.error(
             'Bot by theme=%s start error: %s', theme_name, status_run_bot
