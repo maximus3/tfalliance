@@ -1,22 +1,23 @@
 from typing import List, Tuple
 
-import peewee
+import peewee, datetime
 
-from .models import AllThemes, User
+import database
+from .models import AllThemes, User, Theme
 from .status_code import StatusCode
 
 
 def check_new_theme(theme_name: str) -> StatusCode:
     if (
-        AllThemes.select().where(AllThemes.theme_name == theme_name).count()
-        > 0
+            AllThemes.select().where(AllThemes.theme_name == theme_name).count()
+            > 0
     ):
         return StatusCode.THEME_ALREADY_EXISTS
     return StatusCode.OK
 
 
 def add_new_theme(
-    theme_name: str, tg_bot_token: str, bot_nick: str
+        theme_name: str, tg_bot_token: str, bot_nick: str
 ) -> StatusCode:
     if check_new_theme(theme_name):
         return StatusCode.THEME_ALREADY_EXISTS
@@ -53,3 +54,23 @@ def user_is_admin(user_tg_id: str) -> bool:
         return False
     user = User.select().where(User.user_tg_id == user_tg_id).get()
     return user.is_admin
+
+
+def add_message(theme: str, message: str, user: str) -> bool:
+    if AllThemes.select().where(AllThemes.theme_name == theme).count() == 0\
+            or User.select().where(User.username == user).count() == 0:
+        return False
+    uid = AllThemes.get(AllThemes.theme_name == theme)
+    auth = User.get(User.username == user)
+    Theme.create(theme=uid, message=message, user=auth, timestamp=datetime.datetime.now())
+    return True
+
+
+def get_messages(me) -> list:
+    if AllThemes.select().where(AllThemes.bot_nick == me).count() == 0:
+        return []
+    themes = AllThemes.get(AllThemes.bot_nick == me)
+    rez = []
+    for mes in Theme.select().where(Theme.theme == themes):
+        rez.append(mes.message)
+    return rez

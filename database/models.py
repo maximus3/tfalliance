@@ -33,8 +33,8 @@ class User(BaseModel):
 
 class Theme(BaseModel):
     msg_uid = IntegerField(primary_key=True)
-    theme_uid = ForeignKeyField(AllThemes, related_name='theme')
+    theme = ForeignKeyField(AllThemes, related_name='theme')
     message = CharField()
-    user = ForeignKeyField(User, related_name='theme')
-    completed = BooleanField()
+    user = ForeignKeyField(User, related_name='user')
+    completed = BooleanField(default=False)
     timestamp = DateTimeField()
