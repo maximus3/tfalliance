@@ -9,13 +9,15 @@ def check_admin_permissions(user_id: int) -> bool:
 
 
 # TODO Доставать вопрос по ДАННОЙ ТЕМЕ бота из БД
-def get_question(message) -> list:
+def get_question(me) -> list:
     """
 
     :return: должен выдавать список вопросов ['','', ...] если их нет то []
     """
-    print(message)
+    print(me)
     question = []
     question = ["What are u", "Сообщение номер 2", "Сообщение номер 3"]  # Если в БД есть запись с данной ТЕМОЙ и
     # completed == false -> вставляем текст сообщения
     return question
+
+
