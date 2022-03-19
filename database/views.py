@@ -1,5 +1,6 @@
-import peewee
 from typing import List, Tuple
+
+import peewee
 
 from .models import AllThemes
 from .status_code import StatusCode
@@ -29,4 +30,5 @@ def get_themes_list() -> List[Tuple[str, str]]:  # TODO
 
 
 def add_admin(user_tg_id: str, username: str) -> bool:  # TODO
+    print(user_tg_id, username)
     return False
