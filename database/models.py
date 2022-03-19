@@ -27,7 +27,7 @@ class AllThemes(BaseModel):
 
 class User(BaseModel):
     user_tg_id = CharField()
-    user_name = CharField()
+    username = CharField(null=True)
     is_admin = BooleanField(default=False)
 
 

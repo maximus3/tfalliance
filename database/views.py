@@ -1,4 +1,5 @@
 import peewee
+from typing import List, Tuple
 
 from .models import AllThemes
 from .status_code import StatusCode
@@ -21,3 +22,11 @@ def add_new_theme(
             return StatusCode.THEME_ALREADY_EXISTS
         return StatusCode.ERROR_IN_ADD_TO_DATABASE
     return StatusCode.OK
+
+
+def get_themes_list() -> List[Tuple[str, str]]:  # TODO
+    return []
+
+
+def add_admin(user_tg_id: str, username: str) -> bool:  # TODO
+    return False

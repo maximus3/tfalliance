@@ -1,5 +1,4 @@
 from typing import Tuple
-
 from pyrogram import Client
 
 from .status_code import StatusCode
