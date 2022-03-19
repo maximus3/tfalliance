@@ -21,20 +21,18 @@ class BaseModel(Model):
 class AllThemes(BaseModel):
     theme_uid = IntegerField(primary_key=True)
     theme_name = CharField()
-    tg_bot_token = CharField()
-    bot_nick = CharField()
-
-
-class User(BaseModel):
-    user_tg_id = CharField()
-    username = CharField(null=True)
-    is_admin = BooleanField(default=False)
+    start_message = CharField()
+    chat_id = CharField(unique=True)
+    user_id = CharField()
 
 
 class Theme(BaseModel):
     msg_uid = IntegerField(primary_key=True)
-    theme = ForeignKeyField(AllThemes, related_name='theme')
+    theme = ForeignKeyField(
+        AllThemes, related_name='theme', on_delete='CASCADE'
+    )
     message = CharField()
-    user = ForeignKeyField(User, related_name='user')
+    user_id = CharField()
+    message_id = CharField()
     completed = BooleanField()
     timestamp = DateTimeField()
