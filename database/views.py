@@ -6,13 +6,19 @@ from .models import AllThemes, User
 from .status_code import StatusCode
 
 
-def add_new_theme(
-    theme_name: str, tg_bot_token: str, bot_nick: str
-) -> StatusCode:
+def check_new_theme(theme_name: str) -> StatusCode:
     if (
         AllThemes.select().where(AllThemes.theme_name == theme_name).count()
         > 0
     ):
+        return StatusCode.THEME_ALREADY_EXISTS
+    return StatusCode.OK
+
+
+def add_new_theme(
+    theme_name: str, tg_bot_token: str, bot_nick: str
+) -> StatusCode:
+    if check_new_theme(theme_name):
         return StatusCode.THEME_ALREADY_EXISTS
     try:
         AllThemes.create(

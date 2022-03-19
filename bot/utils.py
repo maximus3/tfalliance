@@ -12,9 +12,9 @@ from .status_code import StatusCode
 logger = logging.getLogger(__name__)
 
 
-def start_new_bot(tg_bot_token: str) -> bool:  # TODO
+def start_new_bot(tg_bot_token: str) -> StatusCode:  # TODO
     logger.info('Start new bot with token=%s', tg_bot_token)
-    return True
+    return StatusCode.OK
 
 
 def check_message_add(text: str) -> Tuple[StatusCode, str]:  # TODO: validate
@@ -27,21 +27,39 @@ def check_message_add(text: str) -> Tuple[StatusCode, str]:  # TODO: validate
 async def add_new_theme(
     theme_name: str, client: Client
 ) -> Tuple[StatusCode, str]:
+    status_check_db_add = database.views.check_new_theme(theme_name)
+    if status_check_db_add:
+        logger.error(
+            'Bot by theme=%s error: %s', theme_name, status_check_db_add
+        )
+        return StatusCode.ERROR_THEME_ALREADY_EXISTS, ''
+
     status_register, tg_bot_token, bot_nick = await register_new_bot(
         theme_name, client
     )
+    if status_register:
+        logger.error('Bot by theme=%s error: %s', theme_name, status_register)
+        return StatusCode.ERROR_IN_REGISTER_NEW_BOT, ''
     logger.info(
         'Bot by theme=%s created with username=%s', theme_name, bot_nick
     )
-    if status_register:
-        return StatusCode.ERROR_IN_REGISTER_NEW_BOT, ''
+
     status_db_add = database.views.add_new_theme(
         theme_name, tg_bot_token, bot_nick
     )
     if status_db_add:
+        logger.error('Bot by theme=%s error: %s', theme_name, status_db_add)
         return StatusCode.ERROR_IN_ADD_TO_DATABASE, ''
-    if not start_new_bot(tg_bot_token):
+    logger.info('Bot by theme=%s db created', theme_name)
+
+    status_run_bot = start_new_bot(tg_bot_token)
+    if status_run_bot:
+        logger.error(
+            'Bot by theme=%s start error: %s', theme_name, status_run_bot
+        )
         return StatusCode.RUN_BOT_ERROR, ''
+    logger.info('Bot by theme=%s run', theme_name)
+
     return StatusCode.OK, bot_nick
 
 
@@ -49,18 +67,22 @@ def get_list_message() -> str:
     text = 'Список всех тем:\n'
     themes_list = database.views.get_themes_list()
     for theme_name, bot_nick in themes_list:
-        text += f'{theme_name}\t{bot_nick}'
+        text += f'{theme_name}\t@{bot_nick}\n'
     return text
 
 
 async def get_add_message(client: Client, text: str) -> str:
     status, theme_name = check_message_add(text)
     if status:
+        logger.error('check_message_add error: %s', status)
         return 'Error'  # TODO
     status, bot_nick = await add_new_theme(theme_name, client)
     if status:
+        logger.error('add_new_theme error: %s', status)
+        if status == StatusCode.ERROR_THEME_ALREADY_EXISTS:
+            return 'Такая тема уже есть'
         return 'Error'  # TODO
-    return f'{bot_nick}'  # TODO
+    return f'@{bot_nick}'  # TODO
 
 
 def get_username(message: types.Message) -> str:
