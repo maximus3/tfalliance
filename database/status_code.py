@@ -1,7 +1,7 @@
-from enum import Enum
+from enum import IntEnum
 
 
-class StatusCode(Enum):
+class StatusCode(IntEnum):
     OK = 0
     THEME_ALREADY_EXISTS = 1
     ERROR_IN_ADD_TO_DATABASE = 2
