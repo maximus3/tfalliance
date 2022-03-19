@@ -9,7 +9,6 @@ with open(BASE_DIR / 'config.json', encoding='utf-8') as f:
 DATABASE_NAME = BASE_DIR / data['database_name']
 MAIN_BOT_API_ID = data['main_bot_api_id']
 MAIN_BOT_API_HASH = data['main_bot_api_hash']
-SECRET_KEY = data['secret_key']
 
 BOT_FATHER_ID = '@BotFather'
 BOT_FATHER_TEXTS = {
