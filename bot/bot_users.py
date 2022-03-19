@@ -1,4 +1,5 @@
 import logging
+from bd_connectivity import *
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.utils.exceptions import BotBlocked
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
@@ -6,6 +7,7 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from os import getenv
+from But import *
 
 TOKEN = getenv("BOT_TOKEN")  # берем токен из виртуального окружения
 bot = Bot(token=TOKEN)
@@ -15,7 +17,7 @@ logging.basicConfig(level=logging.INFO)
 
 
 class Answer(StatesGroup):
-    question_answer = State()  # Will be represented in storage as 'Form:name'
+    question_answer = State()  # Will be represented in storage as 'Answer:question_answer'
 
 
 #  TODO Добавить класс Request для обычных юзеров
@@ -25,17 +27,17 @@ class Answer(StatesGroup):
 @dp.message_handler(commands="incoming")
 @dp.message_handler(Text(equals='Ответить', ignore_case=True))
 async def incoming(message: types.Message):
-    check = await check_admin_permissions(message.from_user.id)
+    check = check_admin_permissions(message.from_user.id)
     if check:
-        question = await get_question()  # Вызов функции для возврата текста вопроса пользователя
-        if question == "":
+        question = get_question(message)  # Вызов функции для возврата текста вопроса пользователя
+        if not question:
             await message.answer("Сообщений по данной теме пока нет!")
         else:
             await Answer.question_answer.set()  # start STATE
             keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
             buttons = ["Отмена"]
             keyboard.add(*buttons)
-            await message.answer(question, reply_markup=keyboard)
+            await message.answer(question[0], reply_markup=keyboard)
     else:
         await message.answer("Данная команда не доступна для данного пользователя!")
 
@@ -55,16 +57,13 @@ async def cancel_handler(message: types.Message, state: FSMContext):
     # Cancel state and inform user about it
     await state.finish()
     # And add main menu keyboard
-    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    check = await check_admin_permissions(message.from_user.id)
+    check = check_admin_permissions(message.from_user.id)
     if check:
-        buttons = ["Ответить", "Помощь"]
-        keyboard.add(*buttons)
-        await message.answer('Главное меню модератора', reply_markup=keyboard)
+        await message.answer('Главное меню модератора', reply_markup=add_buttons_to_keyboard(Butts.moderator_main_menu))
     else:
-        buttons = ["Написать", "Помощь"]
-        keyboard.add(*buttons)
-        await message.answer('Главное меню пользователя', reply_markup=keyboard)
+        pass
+        # await message.answer('Главное меню пользователя', reply_markup=add_buttons_to_keyboard()) #  TODO Добавить
+        #  кнопки для обычного пользователя!
 
 
 # STATE для Answer - вызывается при вводе текста после написанного вопроса
@@ -72,10 +71,7 @@ async def cancel_handler(message: types.Message, state: FSMContext):
 async def process_question_answer(message: types.Message, state: FSMContext):
     print(message.text)  # TODO добавить данный текст в БАЗУ ДАННЫХ
 
-    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    buttons = ["Ответить", "Помощь"]
-    keyboard.add(*buttons)
-    await message.answer("Sucess!", reply_markup=keyboard)
+    await message.answer("Success!", reply_markup=add_buttons_to_keyboard([["Ответить", "Помощь"], ["IDLE"]]))
     await state.finish()
 
 
@@ -88,59 +84,53 @@ async def error_bot_blocked(update: types.Update, exception: BotBlocked):
     return True
 
 
+def add_buttons_to_keyboard(buttons):
+    """
+    Функция добавляет определенные кнопки
+    :param buttons: Подается двумерный массив кнопок для вывода пользователю
+    :return: получившийся keyboard
+    """
+    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    for button in buttons:
+        keyboard.add(*button)
+    return keyboard
+
+
 # СТАРТ, ИНИЦИАЛИЗАЦИЯ ПОЛЬЗОВАТЕЛЯ И БОТА
 @dp.message_handler(commands="start")
 async def cmd_start(message: types.Message):
-    check = await check_admin_permissions(message.from_user.id)
+    check = check_admin_permissions(message.from_user.id)
     full_name = []
     for i in [message.from_user.first_name, message.from_user.last_name, message.from_user.username]:
         if i is not None:
             full_name.append(i)
     await message.answer(f"Здравствуйте, {full_name[0]}!\nВас приветствует бот компании МемасАльянс!")
     print(message.from_user)
-    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
     if check:
-        buttons = ["Ответить", "Помощь"]
-        keyboard.add(*buttons)
-        await message.answer('Главное меню модератора', reply_markup=keyboard)
+        await message.answer('Главное меню модератора', reply_markup=add_buttons_to_keyboard(Butts.moderator_main_menu))
     else:
-        buttons = ["Написать", "Помощь"]
-        keyboard.add(*buttons)
-        await message.answer('Главное меню пользователя', reply_markup=keyboard)
+        pass
+        # await message.answer('Главное меню пользователя', reply_markup=keyboard) # TODO Добавить кнопки для
+        #  обычного пользователя!
 
 
 # Вывод меню помощи для каждого пользователя
 @dp.message_handler(Text(equals="Помощь"))
 @dp.message_handler(commands="help")
 async def helping(message: types.Message):
-    check = await check_admin_permissions(message.from_user.id)
+    check = check_admin_permissions(message.from_user.id)
     if check:
-        await message.answer("Список доступных команд для Модератора:\n"
-                             "/start - инициализация, старт работы бота\n"
-                             "/help - вывод данного меню\n"
-                             "/incoming - начать отвечать на вопрос")
+        await message.answer("Для модератора доступны кнопки ниже\n"
+                             "Для получения спсика вопросов нажмите 'Получить список вопросов'\n"
+                             "После получения списка, вы можете приступать к написанию ответов\n"
+                             "Вопросы можно пролистывать с помощью кнопок переключения\n"
+                             "Если Вы нажали на кнопку 'Ответить на вопрос', то к данному вопросу можно писать ответ\n"
+                             "Если Вы не хотите отвечать на данный вопрос, нажмите появившуюся кнопку 'Отмена'\n")
     else:
         await message.answer("Список доступных команд для пользователя:\n"
                              "/start - инициализация, старт работы бота\n"
                              "/help - вывод данного меню\n"
                              "/write - написать сообщение модератору")
-
-
-# TODO Проверка того, что юзер администратор или нет
-async def check_admin_permissions(user_id: int) -> bool:
-    """
-    :param user_id: уникальный идентификатор юзера
-    :return: булевое значение являетлся ли юзер админом
-    """
-
-    return True
-
-
-# TODO Доставать вопрос по ДАННОЙ ТЕМЕ бота из БД
-async def get_question():
-    question = ""
-    question = "What are u"  # Если в БД есть запись с данной ТЕМОЙ и completed == false вставляем текст сообщения
-    return question
 
 
 if __name__ == "__main__":
