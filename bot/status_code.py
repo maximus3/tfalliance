@@ -8,3 +8,4 @@ class StatusCode(IntEnum):
     ERROR_IN_REGISTER_NEW_BOT = 3
     RUN_BOT_ERROR = 4
     ERROR_THEME_ALREADY_EXISTS = 5
+    ERROR_WRONG_CODE = 6
