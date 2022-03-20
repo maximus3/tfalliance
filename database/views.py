@@ -53,7 +53,7 @@ def delete_theme_by_chat(chat_id: int) -> bool:
         AllThemes.select().where(AllThemes.chat_id == chat_id).get_or_none()
     )
     if theme:
-        theme.delete()
+        theme.delete_instance()
     return True
 
 
@@ -105,7 +105,10 @@ def add_new_message(chat_id: str, text: str, message_id: str) -> StatusCode:
     user_chat = get_user_chat_by_chat_id(chat_id)
     if user_chat is None:
         return StatusCode.CHAT_NOT_EXISTS
-    theme = user_chat.theme
+    try:
+        theme = user_chat.theme
+    except Exception:
+        return StatusCode.THEME_NOT_EXISTS
     Messages.create(
         theme=theme,
         user_chat=user_chat,

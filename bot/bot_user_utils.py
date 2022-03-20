@@ -14,6 +14,6 @@ async def save_message(message: types.Message, text: str) -> str:
     )
     if status_db_add:
         logger.error('Message by chat_id=%s error: %s', chat_id, status_db_add)
-        return 'Error add_new_message'
+        return 'Данная тема больше не сущесвтует'
     logger.info('Message by chat_id=%s saved', chat_id)
     return '__Сообщение отправлено__'  # TODO

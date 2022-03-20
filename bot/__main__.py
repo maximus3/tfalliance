@@ -52,7 +52,7 @@ async def left_chat_member(client: Client, message: types.Message) -> None:
         logger.info('Chat %s deleted', message.chat.id)
     await client.send_message(
         message.left_chat_member.id,
-        f'Chat with theme {message.chat.title} deleted',
+        f'Чат с темой {message.chat.title} удален',
     )
 
 
