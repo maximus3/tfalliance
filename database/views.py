@@ -6,7 +6,13 @@ from .status_code import StatusCode
 
 
 def get_theme_by_secret(secret: str) -> Optional[Theme]:
-    return AllThemes.get_or_None(AllThemes.secret == secret)
+    return AllThemes.get_or_none(AllThemes.secret == secret)
+
+
+def get_theme_by_chat_user_id(chat_id: str, user_id: str) -> Optional[Theme]:
+    return AllThemes.get_or_none(
+        AllThemes.chat_id == chat_id, AllThemes.user_id == user_id
+    )
 
 
 def add_new_theme(
@@ -36,7 +42,12 @@ def delete_theme_by_chat(chat_id: int) -> bool:
 
 
 def add_message(
-    secret: str, message: str, user_id: str, chat_id: str, message_id: str
+    secret: str,
+    message: str,
+    user_id: str,
+    username: str,
+    chat_id: str,
+    message_id: str,
 ) -> bool:
     theme = get_theme_by_secret(secret)
     if theme is None:
@@ -45,6 +56,7 @@ def add_message(
         theme=theme,
         message=message,
         user_id=user_id,
+        username=username,
         chat_id=chat_id,
         message_id=message_id,
         timestamp=dt.datetime.now(),
@@ -52,18 +64,21 @@ def add_message(
     return True
 
 
-def get_messages(secret) -> List[Tuple[str, str, str, str]]:
-    """
-
-    :param secret: secret topic's code
-    :return: List of Tuple of message, user_id, chat_id, message_id
-    """
-    theme = get_theme_by_secret(secret)
+def get_messages(
+    chat_id: str = None, user_id: str = None
+) -> List[Tuple[str, str, str, str, str]]:
+    theme = get_theme_by_chat_user_id(chat_id, user_id)
     if theme is None:
         return []
     messages = []
     for mes in Theme.select().where(Theme.theme == theme):
         messages.append(
-            (mes.message, mes.user_id, mes.chat_id, mes.message_id)
+            (
+                mes.message,
+                mes.user_id,
+                mes.username,
+                mes.chat_id,
+                mes.message_id,
+            )
         )
     return messages

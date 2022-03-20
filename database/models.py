@@ -33,6 +33,7 @@ class Theme(BaseModel):
     )
     message = CharField()
     user_id = CharField()
+    username = CharField()
     chat_id = CharField()
     message_id = CharField()
     timestamp = DateTimeField()

@@ -1,9 +1,11 @@
 import logging
 
 from pyrogram import Client, filters, types
+from pyrogram.handlers import MessageHandler
 
 from config import MAIN_BOT_API_HASH, MAIN_BOT_API_ID
 
+from .bot_author import handler_list, handler_reply
 from .text_data import HELLO_MESSAGE
 from .utils import delete_chat, get_add_message, user_is_bot
 
@@ -33,16 +35,21 @@ async def handler_text(_: Client, message: types.Message) -> None:
 
 
 @app.on_message(filters.left_chat_member)  # type: ignore
-async def text(client: Client, message: types.Message) -> None:
-    print(message)
+async def left_chat_member(client: Client, message: types.Message) -> None:
+    logger.info(f'{message.chat.id} user leave')
     if message.chat.members_count < 2:
-        delete_chat(client, message.chat.id)
+        await delete_chat(client, message.chat.id)
         logger.info('Chat %s deleted', message.chat.id)
-    with client:
-        await client.send_message(
-            message.left_chat_member.id,
-            f'Chat with theme {message.chat.title} deleted',
-        )
+    await client.send_message(
+        message.left_chat_member.id,
+        f'Chat with theme {message.chat.title} deleted',
+    )
+
+
+app.add_handler(
+    MessageHandler(handler_list, filters.group & filters.command('list'))
+)
+app.add_handler(MessageHandler(handler_reply, filters.group & filters.reply))
 
 
 app.run()
