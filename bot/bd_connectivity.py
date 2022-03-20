@@ -1,3 +1,5 @@
+from database.views import user_is_admin, get_messages
+
 # TODO Проверка того, что юзер администратор или нет
 def check_admin_permissions(user_id: int) -> bool:
     """
