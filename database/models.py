@@ -1,5 +1,4 @@
 from peewee import (
-    BooleanField,
     CharField,
     DateTimeField,
     ForeignKeyField,
@@ -24,6 +23,7 @@ class AllThemes(BaseModel):
     start_message = CharField()
     chat_id = CharField(unique=True)
     user_id = CharField()
+    secret = CharField(unique=True)
 
 
 class Theme(BaseModel):
@@ -33,6 +33,6 @@ class Theme(BaseModel):
     )
     message = CharField()
     user_id = CharField()
+    chat_id = CharField()
     message_id = CharField()
-    completed = BooleanField()
     timestamp = DateTimeField()
