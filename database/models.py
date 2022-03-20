@@ -26,14 +26,24 @@ class AllThemes(BaseModel):
     secret = CharField(unique=True)
 
 
-class Theme(BaseModel):
+class UserChat(BaseModel):
+    user_chat_uid = IntegerField(primary_key=True)
+    theme = ForeignKeyField(
+        AllThemes, related_name='theme', on_delete='CASCADE'
+    )
+    chat_id = CharField(unique=True)
+    user_id = CharField()
+    username = CharField()
+
+
+class Messages(BaseModel):
     msg_uid = IntegerField(primary_key=True)
     theme = ForeignKeyField(
         AllThemes, related_name='theme', on_delete='CASCADE'
     )
-    message = CharField()
-    user_id = CharField()
-    username = CharField()
-    chat_id = CharField()
+    user_chat = ForeignKeyField(
+        UserChat, related_name='user_chat', on_delete='CASCADE'
+    )
+    text = CharField()
     message_id = CharField()
     timestamp = DateTimeField()
