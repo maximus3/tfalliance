@@ -21,3 +21,23 @@ def delete_theme_by_chat(chat_id: int) -> bool:
     if theme:
         theme.delete()
     return True
+
+  
+def add_message(theme: str, message: str, user: str) -> bool:
+    if AllThemes.select().where(AllThemes.theme_name == theme).count() == 0\
+            or User.select().where(User.username == user).count() == 0:
+        return False
+    uid = AllThemes.get(AllThemes.theme_name == theme)
+    auth = User.get(User.username == user)
+    Theme.create(theme=uid, message=message, user=auth, timestamp=datetime.datetime.now())
+    return True
+
+
+def get_messages(me) -> list:
+    if AllThemes.select().where(AllThemes.bot_nick == me).count() == 0:
+        return []
+    themes = AllThemes.get(AllThemes.bot_nick == me)
+    rez = []
+    for mes in Theme.select().where(Theme.theme == themes):
+        rez.append(mes.message)
+    return rez

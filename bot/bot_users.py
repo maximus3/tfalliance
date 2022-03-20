@@ -14,32 +14,90 @@ bot = Bot(token=TOKEN)
 storage = MemoryStorage()
 dp = Dispatcher(bot, storage=storage)
 logging.basicConfig(level=logging.INFO)
-
-
-class Answer(StatesGroup):
-    question_answer = State()  # Will be represented in storage as 'Answer:question_answer'
+QUESTIONS = []
+current_class = CurrentMessage()  # Экзепляр класса с текущим значением message index
 
 
 #  TODO Добавить класс Request для обычных юзеров
 
 
+async def update_list_of_questions():
+    global QUESTIONS
+    me = await bot.get_me()
+    QUESTIONS = get_question(me)  # Вызов функции для возврата массива вопросов ["213","sadasd", ....]
+
+
 #  (Доступно только для админа) Выдает текст вопроса от пользователя и стартует STATE question answer
 @dp.message_handler(commands="incoming")
-@dp.message_handler(Text(equals='Ответить', ignore_case=True))
+@dp.message_handler(Text(equals='Ответить на вопрос', ignore_case=True))
 async def incoming(message: types.Message):
     check = check_admin_permissions(message.from_user.id)
     if check:
-        question = get_question(message)  # Вызов функции для возврата текста вопроса пользователя
-        if not question:
+        print(current_class.current_i() + 1)
+        if not QUESTIONS:
             await message.answer("Сообщений по данной теме пока нет!")
         else:
-            await Answer.question_answer.set()  # start STATE
-            keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
-            buttons = ["Отмена"]
-            keyboard.add(*buttons)
-            await message.answer(question[0], reply_markup=keyboard)
+            if 0 <= current_class.current_i() < len(QUESTIONS):
+                question_current = QUESTIONS[current_class.current_i()]
+                await Answer.question_answer.set()  # start STATE
+                text = f"Вопрос номер - {current_class.current_i() + 1}\n\n" \
+                       f"{question_current}"
+                await message.answer(text, reply_markup=add_buttons_to_keyboard(Butts.cancel_menu))
+            else:
+                print(f"Ошибка!\nДанного сообщения не существует")
+                await message.answer("Ошибка!\nДанного сообщения не существует!")
     else:
         await message.answer("Данная команда не доступна для данного пользователя!")
+
+
+@dp.message_handler(Text(equals='Получить список вопросов', ignore_case=True))
+async def get_list_of_messages(message: types.Message):
+    await update_list_of_questions()
+    await message.answer("Получаю список вопросов...")
+    if not QUESTIONS:
+        await message.answer("Пока нет новых сообщений по данной теме")
+    else:
+        await message.answer(f"У Вас есть неотвеченные вопросы: {len(QUESTIONS)}")
+        await message.answer(f"Вопрос номер - {current_class.current_i() + 1}\n\n"
+                             f"{QUESTIONS[current_class.current_i()]}")
+
+
+@dp.message_handler(Text(equals='Следующий', ignore_case=True))
+async def next_question(message: types.Message):
+    if not QUESTIONS:
+        await message.answer("Пока нет новых сообщений по данной теме")
+    else:
+        if 0 <= current_class.current_i() + 1 < len(QUESTIONS):
+            current_class.next_i()
+            await message.answer(f"Вопрос номер - {current_class.current_i() + 1}\n\n"
+                                 f"{QUESTIONS[current_class.current_i()]}")
+        else:
+            await message.answer(f"Нет вопроса...")
+
+
+@dp.message_handler(Text(equals='Предыдущий', ignore_case=True))
+async def next_question(message: types.Message):
+    if not QUESTIONS:
+        await message.answer("Пока нет новых сообщений по данной теме")
+    else:
+        if 0 <= current_class.current_i() - 1 < len(QUESTIONS):
+            current_class.prev_i()
+            await message.answer(f"Вопрос номер - {current_class.current_i() + 1}\n\n"
+                                 f"{QUESTIONS[current_class.current_i()]}")
+        else:
+            await message.answer(f"Нет вопроса...")
+
+
+@dp.message_handler(Text(equals='Текущий', ignore_case=True))
+async def next_question(message: types.Message):
+    if not QUESTIONS:
+        await message.answer("Пока нет новых сообщений по данной теме")
+    else:
+        if 0 <= current_class.current_i() < len(QUESTIONS):
+            await message.answer(f"Вопрос номер - {current_class.current_i() + 1}\n\n"
+                                 f"{QUESTIONS[current_class.current_i()]}")
+        else:
+            await message.answer(f"Нет вопроса...")
 
 
 #  ОТМЕНА действия и возврат в главное меню при любом STATE для любого пользователя
@@ -62,16 +120,17 @@ async def cancel_handler(message: types.Message, state: FSMContext):
         await message.answer('Главное меню модератора', reply_markup=add_buttons_to_keyboard(Butts.moderator_main_menu))
     else:
         pass
-        # await message.answer('Главное меню пользователя', reply_markup=add_buttons_to_keyboard()) #  TODO Добавить
-        #  кнопки для обычного пользователя!
+
+
+# await message.answer('Главное меню пользователя', reply_markup=) #  TODO Добавить кнопки для обычного пользователя!
 
 
 # STATE для Answer - вызывается при вводе текста после написанного вопроса
 @dp.message_handler(state=Answer.question_answer)
 async def process_question_answer(message: types.Message, state: FSMContext):
-    print(message.text)  # TODO добавить данный текст в БАЗУ ДАННЫХ
-
-    await message.answer("Success!", reply_markup=add_buttons_to_keyboard([["Ответить", "Помощь"], ["IDLE"]]))
+    print(message.text)  # TODO отправить данный текст для пользователя написавшего запрос
+    await message.forward(chat_id=154616634)
+    await message.answer("Success!", reply_markup=add_buttons_to_keyboard(Butts.moderator_main_menu))
     await state.finish()
 
 
@@ -120,17 +179,15 @@ async def cmd_start(message: types.Message):
 async def helping(message: types.Message):
     check = check_admin_permissions(message.from_user.id)
     if check:
-        await message.answer("Для модератора доступны кнопки ниже\n"
-                             "Для получения спсика вопросов нажмите 'Получить список вопросов'\n"
-                             "После получения списка, вы можете приступать к написанию ответов\n"
-                             "Вопросы можно пролистывать с помощью кнопок переключения\n"
-                             "Если Вы нажали на кнопку 'Ответить на вопрос', то к данному вопросу можно писать ответ\n"
-                             "Если Вы не хотите отвечать на данный вопрос, нажмите появившуюся кнопку 'Отмена'\n")
+        await message.answer("Для модератора доступны кнопки ниже\n\n"
+                             "Для получения спсика вопросов нажмите 'Получить список вопросов'\n\n"
+                             "После получения списка, вы можете приступать к написанию ответов\n\n"
+                             "Вопросы можно пролистывать с помощью кнопок переключения\n\n"
+                             "Если Вы нажали на кнопку 'Ответить на вопрос', то к данному вопросу можно писать "
+                             "ответ\n\n "
+                             "Если Вы не хотите отвечать на данный вопрос, нажмите появившуюся кнопку 'Отмена'\n\n")
     else:
-        await message.answer("Список доступных команд для пользователя:\n"
-                             "/start - инициализация, старт работы бота\n"
-                             "/help - вывод данного меню\n"
-                             "/write - написать сообщение модератору")
+        await message.answer("ПОКА ПУСТО")  # TODO написать Помощь для user
 
 
 if __name__ == "__main__":
