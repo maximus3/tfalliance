@@ -1,8 +1,8 @@
 [tool.poetry]
-name = "Template"
+name = "TeamForceAllianceHackathon"
 version = "0.1.0"
-description = "Template"
-authors = []
+description = "TFA hackathon bot"
+authors = ["maximus3", "sergey-png", "featskill1", "edgar21082000"]
 
 [tool.poetry.dependencies]
 python = "^3.9"
